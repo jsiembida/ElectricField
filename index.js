@@ -33,7 +33,6 @@ window.addEventListener('load', () => {
   const simulation = new SimulationDispatcher({
     configuration,
     renderer,
-    useWasm: false,
   });
 
   function getMousePosition(canvas, e) {
@@ -127,6 +126,7 @@ window.addEventListener('load', () => {
     },
   });
   const statsContainer = document.querySelector(".stats-container");
+  const statsButton = statsContainer.querySelector(".stats-close");
   configuration.bind({
     id: 'show-stats',
     toValue: (elem) => {
@@ -136,17 +136,13 @@ window.addEventListener('load', () => {
     toInput: (elem, showStats) => {
       elem.showStats = !showStats;
       if (showStats) {
+        statsButton.value = "∨";
         statsContainer.classList.remove("hidden");
       } else {
+        statsButton.value = "stats";
         statsContainer.classList.add("hidden");
       }
     },
-  });
-
-  const resetButton = document.getElementById("reset");
-  resetButton.addEventListener('click', (e) => {
-    configuration.reset();
-    simulation.reset();
   });
 
   const pauseButton = document.getElementById("pause");
@@ -160,6 +156,16 @@ window.addEventListener('load', () => {
   stepButton.addEventListener('click', (e) => {
     simulation.paused = true;
     simulation.step = true;
+    pauseButton.textContent = "Run";
+  });
+
+  const resetButton = document.getElementById("reset");
+  resetButton.addEventListener('click', (e) => {
+    configuration.reset();
+    simulation.reset();
+    stats.reset();
+    simulation.paused = true;
+    simulation.step = false;
     pauseButton.textContent = "Run";
   });
 

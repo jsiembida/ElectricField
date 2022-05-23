@@ -1,9 +1,8 @@
 
 export class SimulationDispatcher {
-    constructor({configuration, renderer, useWasm}) {
+    constructor({configuration, renderer}) {
         this.configuration = configuration;
         this.renderer = renderer;
-        this.useWasm = !!useWasm;
         this.paused = true;
         this.step = false;
 
@@ -51,7 +50,7 @@ export class SimulationDispatcher {
         }
 
         const {qArray, mArray, xArray, yArray, vxArray, vyArray} = this.particles;
-        const {baseSpeed, useWasm} = this;
+        const {baseSpeed} = this;
 
         const {
             timeScale, reverseTime, adaptiveTimeScale, integrationMethod, integrationSteps, mediumFriction, wallsElasticity,
@@ -71,7 +70,6 @@ export class SimulationDispatcher {
             dt: reverseTime ? -dt : dt,
             adaptiveTimeScale,
             wallsElasticity,
-            useWasm,
         });
     };
 
@@ -134,8 +132,8 @@ export class SimulationDispatcher {
 
     addParticle = (x, y, charge, mass) => {
         this.update = () => {
+            console.log(`Adding particle x=${x} y=${y} m=${mass} q=${charge}`);
             charge *= this.baseCharge;
-            console.log(`Adding particle x=${x} y=${y} m=${mass} q=${charge}`)
             const {qArray, mArray, xArray, yArray, vxArray, vyArray} = this.particles;
             this.particles = {
                 qArray: Float32Array.of(...qArray, charge),

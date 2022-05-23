@@ -6,6 +6,9 @@ export class ThreadedRenderQueue {
         this.size = Math.min(Math.max((navigator.hardwareConcurrency || 4) - 2, 1), maxThreads);
         this.useWasm = !!useWasm;
         this.canvas = canvas;
+        // canvas.clientWidth and canvas.clientHeight props are controlled in CSS that is responsive.
+        // canvas.width and canvas.height must be kept in sync with canvas.clientWidth and canvas.clientHeight
+        // as user resizes the page window.
         canvas.width = canvas.clientWidth;
         canvas.height = canvas.clientHeight;
         this.context = canvas.getContext('2d');
@@ -19,9 +22,10 @@ export class ThreadedRenderQueue {
                 stats.count = stats.sum = 0;
                 return count > 0 ? (1000 * count / sum) : undefined;
             },
+            precision: 2,
         });
         stats.init({
-            name: 'time',
+            name: 'simulation time',
             calc: ({sum}) => sum,
             precision: 4,
             limit: 1,
@@ -34,6 +38,7 @@ export class ThreadedRenderQueue {
         });
         stats.init({
             name: 'render load',
+            precision: 2,
             unit: '%',
         });
         stats.init({
@@ -41,29 +46,31 @@ export class ThreadedRenderQueue {
             precision: 0,
         });
         stats.init({
-            name: 'render time',
+            name: 'render duration',
+            precision: 2,
             unit: 'ms',
         });
         stats.init({
-            name: 'physics time',
+            name: 'physics duration',
+            precision: 2,
             unit: 'ms',
         });
         stats.init({
             name: 'potential energy',
             calc: ({last}) => last,
-            precision: 3,
+            precision: 4,
             limit: 1,
         });
         stats.init({
             name: 'kinetic energy',
             calc: ({last}) => last,
-            precision: 3,
+            precision: 4,
             limit: 1,
         });
         stats.init({
             name: 'total energy',
             calc: ({last}) => last,
-            precision: 3,
+            precision: 4,
             limit: 1,
         });
         stats.particles = 0;
@@ -117,25 +124,31 @@ export class ThreadedRenderQueue {
     }) => {
         this.nextPullId++;
         const {canvas, stats} = this;
+        const {width: canvasWidth, height: canvasHeight, clientWidth, clientHeight} = canvas;
 
         if (this.lastTimestamp != null) {
             stats.fps = timestamp - this.lastTimestamp;
         }
         stats.renderLoad = 100.0 * this.busyWorkers.size / this.size;
-        stats.renderTime = renderDuration;
+        stats.renderDuration = renderDuration;
         stats.renderThreads = this.size
-        stats.physicsTime = physicsDuration;
-        stats.time = dt;
+        stats.physicsDuration = physicsDuration;
+        stats.simulationTime = dt;
         stats.particles = qArray.length;
         stats.potentialEnergy = potentialEnergy;
         stats.kineticEnergy = kineticEnergy;
         stats.totalEnergy = potentialEnergy + kineticEnergy;
         this.lastTimestamp = timestamp;
 
-        if (canvas.width === width && canvas.height === height) {
+        if (width === canvasWidth && height === canvasHeight) {
             const u8buffer = new Uint8ClampedArray(buffer);
             const imageData = new ImageData(u8buffer, width, height);
             this.context.putImageData(imageData, 0, 0);
+        }
+
+        if (canvasWidth !== clientWidth || canvasHeight !== clientHeight) {
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
         }
 
         this.buffers.push(buffer);
